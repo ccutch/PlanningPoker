@@ -1,10 +1,12 @@
-package planner
+package views
 
 import (
 	"bytes"
 	"fmt"
 	"log"
 	"net/http"
+	"planner"
+	db "planner/queries"
 	"strconv"
 	"strings"
 )
@@ -37,8 +39,8 @@ func streamPodEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprint(w, "event: ping\ndata: \n\n")
 	flusher.Flush()
-	events, done := make(chan event), make(chan bool)
-	l, err := Subscribe(r.PathValue("id"), events, done)
+	events, done := make(chan planner.Event), make(chan bool)
+	l, err := planner.Subscribe(r.PathValue("id"), events, done)
 	if err != nil {
 		http.Error(w, "Failed to subscribe!", http.StatusInternalServerError)
 		return
@@ -56,7 +58,7 @@ func streamPodEvents(w http.ResponseWriter, r *http.Request) {
 			flusher.Flush()
 		case <-r.Context().Done():
 			// Unsubscribe(r.PathValue("id"), events)
-			Unsubscribe(l, r.PathValue("id"))
+			planner.Unsubscribe(l, r.PathValue("id"))
 			done <- true
 			close(events)
 			return
@@ -67,33 +69,33 @@ func streamPodEvents(w http.ResponseWriter, r *http.Request) {
 // register will create a new player for the game, attach to session, and push state pod
 func handleRegister(w http.ResponseWriter, r *http.Request) {
 	podID := r.PathValue("id")
-	player, err := CreatePlayer(podID, r.FormValue("name"), false)
+	player, err := db.InsertPlayer(podID, r.FormValue("name"), false)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	player.Attach(w)
-	Publish(podID, "players", "pod-info/players")
+	planner.Publish(podID, "players", "pod-info/players")
 	w.Header().Add("Hx-Refresh", "true")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // handleNewTopic handles a new topic posted by the owner of a pod
 func handleNewTopic(w http.ResponseWriter, r *http.Request) {
-	t, err := CreateTopic(r.PathValue("id"), r.FormValue("prompt"))
+	t, err := db.InsertTopic(r.PathValue("id"), r.FormValue("prompt"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if err := Publish(t.PodID, "topics", "voting-topics"); err != nil {
+	if err := planner.Publish(t.PodID, "topics", "voting-topics"); err != nil {
 		log.Println("Error creating topic")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 	go func() {
-		pod, _ := GetPod(t.PodID)
-		topics, _ := GetUpcomingTopicsForPod(t.PodID)
+		pod, _ := db.GetPod(t.PodID)
+		topics, _ := db.GetUpcomingTopicsForPod(t.PodID)
 		log.Println(pod, topics)
 		if pod == nil || topics == nil {
 			return
@@ -101,19 +103,19 @@ func handleNewTopic(w http.ResponseWriter, r *http.Request) {
 
 		log.Println(pod.Status, topics)
 		if pod.Status != "voting" && len(topics) == 1 {
-			Publish(t.PodID, "content", "voting-content")
+			planner.Publish(t.PodID, "content", "voting-content")
 		}
 	}()
 }
 
 // handlePodStart handles the owner starting a new round of voting
 func handlePodStart(w http.ResponseWriter, r *http.Request) {
-	topic := GetNextTopic(r.PathValue("id"))
+	topic := db.GetNextTopic(r.PathValue("id"))
 	if topic == nil {
 		http.Error(w, "No topic: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	go StartPoll(topic.PodID, topic.ID)
+	go planner.StartPoll(topic.PodID, topic.ID)
 }
 
 // handlePodVote handles players votes during a round of voting
@@ -124,8 +126,8 @@ func handlePodVote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid choice: "+r.FormValue("choice"), http.StatusBadRequest)
 		return
 	}
-	player := CurrentPlayer(r, podID)
-	Vote(podID, player.ID, choice)
+	player := planner.CurrentPlayer(r, podID)
+	planner.Vote(podID, player.ID, choice)
 	props := getPlannerProps(r)
 	render(w, "voting-content/answered", props)
 }

@@ -1,4 +1,4 @@
-package planner
+package views
 
 import (
 	"bytes"
@@ -8,10 +8,14 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"planner"
+	db "planner/queries"
 	"strings"
 )
 
-//go:embed templates/*
+var Routes = http.NewServeMux()
+
+//go:embed *.html
 var templates embed.FS
 
 var (
@@ -29,40 +33,40 @@ func render(w io.Writer, name string, data interface{}) {
 }
 
 type PlannerProps struct {
-	Pod            *Pod
-	CurrentPlayer  *Player
-	NextTopic      *Topic
-	LastTopic      *Topic
+	Pod            *planner.Pod
+	CurrentPlayer  *planner.Player
+	NextTopic      *planner.Topic
+	LastTopic      *planner.Topic
 	CurrentChoice  int
-	Players        []*Player
-	UpcomingTopics []*Topic
-	CompleteTopics []*Topic
+	Players        []*planner.Player
+	UpcomingTopics []*planner.Topic
+	CompleteTopics []*planner.Topic
 	Error          error
 }
 
 func getPlannerProps(r *http.Request) (props PlannerProps) {
 	id := r.PathValue("id")
-	props.Pod, props.Error = GetPod(id)
+	props.Pod, props.Error = db.GetPod(id)
 	if props.Error != nil {
 		return
 	}
-	props.NextTopic = GetNextTopic(props.Pod.ID)
-	props.LastTopic = GetLastTopic(props.Pod.ID)
-	props.Players, props.Error = GetPlayersForPod(props.Pod.ID)
+	props.NextTopic = db.GetNextTopic(props.Pod.ID)
+	props.LastTopic = db.GetLastTopic(props.Pod.ID)
+	props.Players, props.Error = db.GetPlayersForPod(props.Pod.ID)
 	if props.Error != nil {
 		return
 	}
-	props.UpcomingTopics, props.Error = GetUpcomingTopicsForPod(props.Pod.ID)
+	props.UpcomingTopics, props.Error = db.GetUpcomingTopicsForPod(props.Pod.ID)
 	if props.Error != nil {
 		return
 	}
-	props.CompleteTopics, props.Error = GetCompleteTopicsForPod(props.Pod.ID)
+	props.CompleteTopics, props.Error = db.GetCompleteTopicsForPod(props.Pod.ID)
 	if props.Error != nil {
 		return
 	}
-	props.CurrentPlayer = CurrentPlayer(r, id)
+	props.CurrentPlayer = planner.CurrentPlayer(r, id)
 	if props.CurrentPlayer != nil {
-		props.CurrentChoice = Choice(id, props.CurrentPlayer.ID)
+		props.CurrentChoice = planner.Choice(id, props.CurrentPlayer.ID)
 	}
 	return
 }

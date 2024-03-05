@@ -37,22 +37,21 @@ type Topic struct {
 	UpdatedAt time.Time
 }
 
-func (p Pod) VotingChoices() []string {
-	return VotingStrategies[p.Strategy]
-}
-
-func (t Topic) ResultString() string {
-	if t.Result == 0 {
-		return ""
-	}
-	p, _ := GetPod(t.PodID)
-	log.Println("topic result", t.Result)
-	return p.VotingChoices()[t.Result]
-}
-
 var VotingStrategies = map[string][]string{
 	"Fibinocci Numbers": {"1", "2", "3", "5", "8", "13"},
 	"T-Shirt Sizes":     {"xs", "s", "m", "lg", "xl", "2xl"},
 	"Sentiment":         {"Strongly Disagree", "Disagree", "Mild Disagree", "Mild Agree", "Agree", "Strongly Agree"},
 	"Face Cards":        {"Jack", "Queen", "King", "Ace"},
+}
+
+func (p Pod) VotingChoices() []string {
+	return VotingStrategies[p.Strategy]
+}
+
+func (t Topic) ResultString(p *Pod) string {
+	if t.Result == 0 {
+		return ""
+	}
+	log.Println("topic result", t.Result)
+	return p.VotingChoices()[t.Result]
 }

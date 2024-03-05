@@ -11,12 +11,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-type event struct {
+type Event struct {
 	Name string
 	Tmpl string
 }
 
-func Subscribe(id string, out chan<- event, done <-chan bool) (*pq.Listener, error) {
+func Subscribe(id string, out chan<- Event, done <-chan bool) (*pq.Listener, error) {
 	minT, maxT := 10*time.Second, time.Minute
 	l := pq.NewListener(dbURL, minT, maxT, func(ev pq.ListenerEventType, err error) {
 		if err != nil {
@@ -31,7 +31,7 @@ func Subscribe(id string, out chan<- event, done <-chan bool) (*pq.Listener, err
 			select {
 			case n := <-l.Notify:
 				if n != nil {
-					var e event
+					var e Event
 					json.NewDecoder(strings.NewReader(n.Extra)).Decode(&e)
 					out <- e
 				}
@@ -47,7 +47,7 @@ func Subscribe(id string, out chan<- event, done <-chan bool) (*pq.Listener, err
 
 func Publish(id, name, tmpl string) error {
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&event{name, tmpl})
+	json.NewEncoder(&buf).Encode(&Event{name, tmpl})
 	payload := strings.ReplaceAll(buf.String(), "\n", "")
 	_, err := db.Exec(fmt.Sprintf("NOTIFY %s, '%s'", strings.ToLower(id), payload))
 	return errors.Wrap(err, "failed to publish")

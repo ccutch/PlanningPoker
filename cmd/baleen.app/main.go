@@ -5,37 +5,24 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"planner"
+	views "planner/templates"
 
-	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 )
 
-func main() {
+var port = os.Getenv("PORT")
 
-	port, dbURL := os.Getenv("PORT"), os.Getenv("DATABASE_URL")
+func init() {
 	if port == "" {
 		port = "8000"
 	}
+}
+
+func main() {
 	host := fmt.Sprintf("0.0.0.0:%s", port)
-
-	go func() {
-		m, err := migrate.New("github://ccutch/PlanningPoker/migrations", dbURL)
-		if err == nil {
-			m.Up()
-		}
-	}()
-
-	// First let's establish a connection pool to db
-	if err := planner.GoOnline(dbURL); err != nil {
-		// And fail early if we encounter an error.
-		log.Fatal("failed to open db:", err)
-	}
-
-	// Second let's listen for incoming http requests.
-	log.Printf("Serving Baleen @ http://%s\n", host)
-	if err := http.ListenAndServe(host, planner.Routes); err != nil {
+	log.Printf("Serving Baleen @ http://%s", host)
+	if err := http.ListenAndServe(host, views.Routes); err != nil {
 		log.Fatal(err)
 	}
 }
