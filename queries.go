@@ -27,7 +27,7 @@ func genID(n int) string {
 	if _, err := rand.Read(b); err != nil {
 		log.Fatal("failed to generate random secret")
 	}
-	return base64.URLEncoding.EncodeToString(b)[:n]
+	return "x" + base64.URLEncoding.EncodeToString(b)[:n-1]
 }
 
 //go:embed queries/insert-pod.sql
