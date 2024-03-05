@@ -20,12 +20,13 @@ func main() {
 	}
 	host := fmt.Sprintf("0.0.0.0:%s", port)
 
-	go func() {
-		m, err := migrate.New("github://ccutch/PlanningPoker/migrations", dbURL)
-		if err == nil {
-			m.Up()
-		}
-	}()
+	m, err := migrate.New("github://ccutch/PlanningPoker/migrations", dbURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = m.Up(); err != nil {
+		log.Fatal(err)
+	}
 
 	// First let's establish a connection pool to db
 	if err := planner.GoOnline(dbURL); err != nil {

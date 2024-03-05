@@ -125,7 +125,8 @@ func handlePodVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	player := CurrentPlayer(r, podID)
-	Vote(podID, player.ID, choice)
+	topic := GetNextTopic(podID)
+	UpsertVoteForPlayer(topic.ID, player.ID, choice)
 	props := getPlannerProps(r)
 	render(w, "voting-content/answered", props)
 }

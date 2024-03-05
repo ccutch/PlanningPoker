@@ -37,6 +37,14 @@ type Topic struct {
 	UpdatedAt time.Time
 }
 
+type Vote struct {
+	TopicID   string
+	PlayerID  string
+	Choice    int
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 func (p Pod) VotingChoices() []string {
 	return VotingStrategies[p.Strategy]
 }

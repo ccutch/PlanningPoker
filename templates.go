@@ -61,8 +61,14 @@ func getPlannerProps(r *http.Request) (props PlannerProps) {
 		return
 	}
 	props.CurrentPlayer = CurrentPlayer(r, id)
-	if props.CurrentPlayer != nil {
-		props.CurrentChoice = Choice(id, props.CurrentPlayer.ID)
+	if props.CurrentPlayer != nil && props.NextTopic != nil {
+		vote, err := SelectVoteForPlayer(
+			props.NextTopic.ID,
+			props.CurrentPlayer.ID,
+		)
+		if err == nil {
+			props.CurrentChoice = vote.Choice
+		}
 	}
 	return
 }
