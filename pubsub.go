@@ -16,7 +16,7 @@ type event struct {
 	Tmpl string
 }
 
-func Subscribe(id string, out chan event) (*pq.Listener, error) {
+func Subscribe(id string, out chan<- event, done <-chan bool) (*pq.Listener, error) {
 	minT, maxT := 10*time.Second, time.Minute
 	l := pq.NewListener(dbURL, minT, maxT, func(ev pq.ListenerEventType, err error) {
 		if err != nil {
@@ -35,6 +35,8 @@ func Subscribe(id string, out chan event) (*pq.Listener, error) {
 					json.NewDecoder(strings.NewReader(n.Extra)).Decode(&e)
 					out <- e
 				}
+			case <-done:
+				return
 			case <-time.After(90 * time.Second):
 				go l.Ping()
 			}
@@ -54,34 +56,3 @@ func Publish(id, name, tmpl string) error {
 func Unsubscribe(l *pq.Listener, id string) error {
 	return errors.Wrap(l.Unlisten(id), "failed to unsubscribe")
 }
-
-//// OLD pre-postgres
-// var eventBus = struct {
-// 	sync.Mutex
-// 	Events map[string][]chan event
-// }{Events: map[string][]chan event{}}
-
-// func Subscribe(id string, out chan event) {
-// 	eventBus.Lock()
-// 	defer eventBus.Unlock()
-// 	eventBus.Events[id] = append(eventBus.Events[id], out)
-// }
-
-// func Publish(id, name, tmpl string) {
-// 	eventBus.Lock()
-// 	defer eventBus.Unlock()
-// 	for _, l := range eventBus.Events[id] {
-// 		l <- event{name, tmpl}
-// 	}
-// }
-
-// func Unsubscribe(id string, out chan event) {
-// 	eventBus.Lock()
-// 	defer eventBus.Unlock()
-// 	for i, l := range eventBus.Events[id] {
-// 		if l == out {
-// 			eventBus.Events[id] = append(eventBus.Events[id][:i], eventBus.Events[id][i+1:]...)
-// 			break
-// 		}
-// 	}
-// }

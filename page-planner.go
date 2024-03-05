@@ -37,8 +37,8 @@ func streamPodEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprint(w, "event: ping\ndata: \n\n")
 	flusher.Flush()
-	events := make(chan event)
-	l, err := Subscribe(r.PathValue("id"), events)
+	events, done := make(chan event), make(chan bool)
+	l, err := Subscribe(r.PathValue("id"), events, done)
 	if err != nil {
 		http.Error(w, "Failed to subscribe!", http.StatusInternalServerError)
 		return
@@ -57,6 +57,7 @@ func streamPodEvents(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			// Unsubscribe(r.PathValue("id"), events)
 			Unsubscribe(l, r.PathValue("id"))
+			done <- true
 			close(events)
 			return
 		}

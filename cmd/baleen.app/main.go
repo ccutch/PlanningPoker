@@ -1,28 +1,41 @@
 package main
 
 import (
-	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"planner"
-)
 
-var (
-	addr  = flag.String("http", "0.0.0.0:8000", "http address for listening")
-	dbURL = flag.String("db-url", "", "database url for data storage")
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/github"
 )
 
 func main() {
-	flag.Parse()
-	log.Printf("Serving Baleen @ http://%s\n", *addr)
 
-	// First lets establish a connection pool to db
-	if err := planner.GoOnline(*dbURL); err != nil {
+	port, dbURL := os.Getenv("PORT"), os.Getenv("DATABASE_URL")
+	if port == "" {
+		port = "8000"
+	}
+	host := fmt.Sprintf("0.0.0.0:%s", port)
+
+	go func() {
+		m, err := migrate.New("github://ccutch/PlanningPoker/migrations", dbURL)
+		if err == nil {
+			m.Up()
+		}
+	}()
+
+	// First let's establish a connection pool to db
+	if err := planner.GoOnline(dbURL); err != nil {
 		// And fail early if we encounter an error.
 		log.Fatal("failed to open db:", err)
 	}
 
-	if err := http.ListenAndServe(*addr, planner.Routes); err != nil {
+	// Second let's listen for incoming http requests.
+	log.Printf("Serving Baleen @ http://%s\n", host)
+	if err := http.ListenAndServe(host, planner.Routes); err != nil {
 		log.Fatal(err)
 	}
 }
