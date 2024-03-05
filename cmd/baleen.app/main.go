@@ -22,11 +22,9 @@ func main() {
 
 	m, err := migrate.New("github://ccutch/PlanningPoker/migrations", dbURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed ot parse", err)
 	}
-	if err = m.Up(); err != nil {
-		log.Fatal(err)
-	}
+	m.Up()
 
 	// First let's establish a connection pool to db
 	if err := planner.GoOnline(dbURL); err != nil {
