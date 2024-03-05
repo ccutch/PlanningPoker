@@ -6,20 +6,32 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"log"
+	"os"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/github"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
 var (
-	dbURL string
+	dbURL = os.Getenv("DATABASE_URL")
 	db    *sql.DB
 )
 
-func GoOnline(url string) (err error) {
-	db, err = sql.Open("postgres", url)
-	dbURL = url
-	return errors.Wrap(err, "failed to connect to db: "+url)
+func init() {
+	db, err = sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to connect to db: "+dbURL))
+	}
+
+	m, err := migrate.New("github://ccutch/PlanningPoker/migrations", dbURL)
+	if err != nil {
+		log.Println("failed ot parse", err)
+	} else {
+		m.Up()
+	}
 }
 
 func genID(n int) string {
