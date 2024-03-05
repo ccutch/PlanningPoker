@@ -3,7 +3,6 @@ package planner
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,7 +20,6 @@ func init() {
 // planner page renders whole html with normal planner props
 func plannerPage(w http.ResponseWriter, r *http.Request) {
 	props := getPlannerProps(r)
-	log.Println("error:", props.Error)
 	render(w, "planner.html", props)
 }
 
@@ -86,7 +84,6 @@ func handleNewTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := Publish(t.PodID, "topics", "voting-topics"); err != nil {
-		log.Println("Error creating topic")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -94,12 +91,10 @@ func handleNewTopic(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		pod, _ := GetPod(t.PodID)
 		topics, _ := GetUpcomingTopicsForPod(t.PodID)
-		log.Println(pod, topics)
 		if pod == nil || topics == nil {
 			return
 		}
 
-		log.Println(pod.Status, topics)
 		if pod.Status != "voting" && len(topics) == 1 {
 			Publish(t.PodID, "content", "voting-content")
 		}

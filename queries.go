@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -39,7 +40,8 @@ func genID(n int) string {
 	if _, err := rand.Read(b); err != nil {
 		log.Fatal("failed to generate random secret")
 	}
-	return "x" + base64.URLEncoding.EncodeToString(b)[:n-1]
+	nonce := base64.URLEncoding.EncodeToString(b)[:n-1]
+	return "x" + strings.ReplaceAll(nonce, "-", "_")
 }
 
 //go:embed queries/insert-pod.sql

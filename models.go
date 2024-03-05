@@ -1,7 +1,6 @@
 package planner
 
 import (
-	"log"
 	"time"
 )
 
@@ -54,7 +53,6 @@ func (t Topic) ResultString() string {
 		return ""
 	}
 	p, _ := GetPod(t.PodID)
-	log.Println("topic result", t.Result)
 	return p.VotingChoices()[t.Result]
 }
 

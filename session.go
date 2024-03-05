@@ -19,7 +19,6 @@ func (player *Player) Attach(w http.ResponseWriter) {
 
 func CurrentPlayer(r *http.Request, podID string) *Player {
 	if cookie, err := r.Cookie(podID); err == nil {
-		log.Println("cookie", cookie)
 		if player, err := GetPlayer(cookie.Value); err == nil {
 			return player
 		} else {
