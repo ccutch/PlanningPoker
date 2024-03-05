@@ -1,0 +1,45 @@
+{{define "voting-cards"}}
+{{range .Players}}
+  {{if (eq .ID $.CurrentPlayer.ID)}}
+    {{if (index $.Pod.Votes .ID)}}
+      {{template "voting-card/results" .}}
+    {{else}}
+      {{template "voting-card/voting" .}}
+    {{end}}
+  {{else}}
+    {{template "voting-card/hidden"}}
+  {{end}}
+{{end}}
+{{end}}
+
+{{define "voting-card/hidden"}}
+<div class="card w-52 h-64 bg-base-100 shadow-xl">
+  <div class="card-body">
+    <h2 class="card-title self-center text-xl">{{.Name}}</h2>
+    <div class="aspect-square flex justify-center items-center bg-base-300">
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{define "voting-card/voting"}}
+<div class="card w-52 h-64 bg-base-100 shadow-xl">
+  <div class="card-body">
+    <h2 class="card-title self-center text-xl">{{.Name}}</h2>
+    <div class="aspect-square flex justify-center items-center">
+      <span class="text-7xl font-bold">{{index $.Pod.Votes .ID}}</span>
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{define "voting-card/results"}}
+<div class="card w-52 h-64 bg-base-100 shadow-xl">
+  <div class="card-body">
+    <h2 class="card-title self-center text-xl">{{.Name}}</h2>
+    <div class="aspect-square flex justify-center items-center">
+      <span class="text-7xl font-bold">{{index $.Pod.Votes .ID}}</span>
+    </div>
+  </div>
+</div>
+{{end}}

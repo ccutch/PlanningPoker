@@ -1,0 +1,59 @@
+<html data-theme="aqua">
+    {{template "head" .}}
+
+    <body class="flex flex-col h-screen">
+        {{template "navbar" .}}
+
+        <div class="hero h-full bg-base-200">
+          <div id="content" class="h-full w-full hero-content text-center flex flex-col">
+            <h1 class="text-6xl font-bold">Baleen</h1>
+            <h2 class="text-2xl font-semibold">
+                Planning Poker Made Fun to Help Prioritize your Next Sprint
+            </h2>
+            <button class="mt-8 btn btn-primary" onclick="createPod.showModal()">
+              Start a New Game
+            </button>
+          </div>
+        </div>
+
+        {{template "create-pod-modal" .}}
+    </body>
+</html>
+
+{{define "create-pod-modal"}}
+<dialog id="createPod" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg">Create a Baleen Pod</h3>
+    <form hx-post="/create-pod" class="mb-0 pt-8 flex flex-col gap-6">
+
+      <label class="input input-bordered flex items-center gap-2">
+        Name <input required name="name" class="grow" placeholder="Name your Pod">
+      </label>
+
+      <label class="form-control w-full">
+        <div class="label">
+          <span class="label-text">Pick Voting Strategy:</span>
+        </div>
+        <select name="strat" class="select select-bordered w-full">
+          <option value="Fibinocci Numbers">Fibinocci Numbers (1, 2, 3, 5, 8, 13)</option>
+          <option value="T-Shirt Sizes">T-Shirt Sizes (xs, s, m, lg, xl, 2xl)</option>
+          <option value="Sentiment">Sentiment (Strongly Agree, Agree, ...)</option>
+          <!-- <option value="Face Cards">Face Cards</option> -->
+        </select>
+      </label>
+
+      <label class="label cursor-pointer">
+        <span class="label-text">Private Voting</span> 
+        <input type="checkbox" name="private" class="toggle" />
+      </label>
+
+      <div class="modal-action">
+        <button class="btn">Create</button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+{{end}}

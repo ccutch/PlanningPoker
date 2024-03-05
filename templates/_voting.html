@@ -1,0 +1,101 @@
+{{define "voting-content"}}
+{{if not .CurrentPlayer}}
+  {{template "voting-content/register"   .}}
+{{else if eq .Pod.Status "voting"}}
+  {{if .CurrentChoice}}
+    {{template "voting-content/answered" .}}
+  {{else}}
+    {{template "voting-content/voting"   .}}
+  {{end}}
+{{else if .LastTopic}}
+  {{template "voting-content/results"    .}}
+{{else}}
+  {{template "voting-content/waiting"    .}}
+{{end}}
+{{end}}
+
+
+{{define "voting-content/register"}}
+<div class="col-start-1 flex flex-col h-80 rounded-box p-8 w-full bg-base-300 items-center justify-center">
+  <form class="flex flex-col gap-4 w-full max-w-lg" hx-post="/pod/{{.Pod.ID}}/register">
+    <h2 class="text-2xl font-bold">Pick a Name to get Started</h2>
+    <label class="w-full input input-bordered flex items-center gap-2">
+      Name
+      <input name="name" type="text" class="grow" placeholder="Enter your name...">
+    </label>
+    <div class="flex justify-end">
+      <button class="btn btn-primary">
+        Join Pod
+      </button>
+    </div>
+  </form>
+</div>
+{{end}}
+
+
+{{define "voting-content/waiting"}}
+<div class="col-start-1 flex flex-col gap-10 h-80 rounded-box p-8 w-full bg-base-300 items-center justify-center">
+  <h2 class="animate-pulse text-2xl text-center font-bold">
+    Waiting for next topic to begin...
+  </h2>
+  {{if and .CurrentPlayer.Owner .NextTopic }}
+  <button class="btn btn-primary" hx-post="/pod/{{.Pod.ID}}/start" hx-target="closest div">
+      Start Next Topic ({{.NextTopic.ID}})
+  </button>
+  {{end}}
+</div>
+{{end}}
+
+
+{{define "voting-content/voting"}}
+<div class="col-start-1 flex flex-col gap-10 h-80 rounded-box p-8 w-full bg-base-300 items-center justify-center">
+  <h2 class="text-xl">
+    {{.NextTopic.Prompt}}
+  </h2>
+  <form class="flex gap-4 p-4" hx-target="closest div">
+    {{range $i, $v := .Pod.VotingChoices}}
+    <button class="btn btn-primary" hx-post="/pod/{{$.Pod.ID}}/vote?c={{$i}}">
+      {{$v}}
+    </button>
+    {{end}}
+  </form>
+</div>
+{{end}}
+
+{{define "voting-content/answered"}}
+<div class="col-start-1 flex flex-col gap-10 h-80 rounded-box p-8 w-full bg-base-300 items-center justify-center">
+  <h2 class="text-xl">
+    {{.NextTopic.Prompt}}
+  </h2>
+  <form class="flex gap-4 p-4" hx-target="closest div">
+    {{range $i, $v := .Pod.VotingChoices}}
+    <button class="btn btn-primary {{if eq $.CurrentChoice $i}}btn-primary{{else}}btn-ghost{{end}}" hx-post="/pod/{{$.Pod.ID}}/vote?c={{$i}}">
+        {{$v}}
+    </button>
+    {{end}}
+  </form>
+</div>
+{{end}}
+
+
+{{define "voting-content/sharing"}}
+<div class="col-start-1 flex flex-col gap-10 h-80 rounded-box p-8 w-full bg-base-300 items-center justify-center">
+  <h2 class="text-xl">
+      ...
+  </h2>
+</div>
+{{end}}
+
+
+{{define "voting-content/results"}}
+<div class="col-start-1 flex flex-col gap-10 h-80 rounded-box p-8 w-full bg-base-300 items-center justify-center">
+  <h2 class="text-2xl">
+      Average: {{.LastTopic.ResultString}} ({{.LastTopic.ID}})
+  </h2>
+  {{if and .CurrentPlayer.Owner .NextTopic}}
+  <button class="btn btn-primary" hx-post="/pod/{{.Pod.ID}}/start" hx-target="closest div">
+      Start Next Topic
+  </button>
+  {{end}}
+</div>
+{{end}}

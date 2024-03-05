@@ -1,0 +1,51 @@
+{{define "voting-topics"}}
+{{if not .CurrentPlayer}}
+<div class="w-full h-48 flex justify-center items-center">
+  <h3 class="animate-pulse text-2xl">Pick a Name to get Started</h3>
+</div>
+{{else}}
+<div class="flex flex-col gap-4">
+  {{if .CurrentPlayer.Owner}}
+    {{template "voting-topics/form" .}}
+  {{end}}
+
+  {{with .UpcomingTopics}}
+    <h3 class="opacity-60 text-xl font-bold mt-4">Upcoming Topics</h3>
+    {{template "voting-topics/topic-list" .}}
+  {{end}}
+
+  {{with .CompleteTopics}}
+    <h3 class="opacity-60 text-xl font-bold mt-4">Completed Topics</h3>
+    {{template "voting-topics/topic-list" .}}
+  {{end}}
+</div>
+{{end}}
+{{end}}
+
+
+{{define "voting-topics/form"}}
+<form class="mb-0 w-full flex gap-4" hx-post="/pod/{{.Pod.ID}}/topics">
+  <input autofocus required name="prompt" class="grow input input-bordered" placeholder="Add a New Topic">
+  <button class="btn btn-secondary">
+    {{template "circle-plus-icon"}} Add Topic
+  </button>
+</form>
+{{end}}
+
+
+{{define "voting-topics/topic-list"}}
+<div id="upcoming-topics" class="col-start-1 flex flex-col gap-2">
+  {{range .}}
+    <div class="flex items-center justify-between rounded-box px-8 py-4 bg-base-100">
+      <div class="text-xl font-medium">
+        {{.Prompt}}
+      </div>
+      {{if eq .Status "upcoming"}}
+      <div class="badge badge-lg">Upcoming</div>
+      {{else}}
+      <div class="badge badge-lg badge-secondary badge-outline">Result: {{.ResultString}}</div>
+      {{end}}
+    </div>
+  {{end}}
+</div>
+{{end}}

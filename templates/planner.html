@@ -1,0 +1,81 @@
+<html data-theme="fantasy">
+  {{template "head" .}}
+  <body class="bg-base-200 flex flex-col min-h-screen">
+    {{template "navbar" .}}
+
+    <div class="py-8 px-4 mx-auto container grid grid-cols-[2fr_1fr] items-start gap-y-8 gap-x-12">
+      <div hx-ext="sse" sse-connect="/pod/{{.Pod.ID}}/events" sse-swap="content">
+        {{template "voting-content" .}}
+      </div>
+      <div hx-ext="sse" sse-connect="/pod/{{.Pod.ID}}/events" sse-swap="topics">
+        {{template "voting-topics" .}}
+        <!-- { {template "pod-topics/previous" .} } -->
+      </div>
+      {{template "pod-information" .}}
+    </div>
+  </body>
+</html>
+
+{{define "pod-information"}}
+<div class="col-start-2 h-min row-start-1 row-span-3 flex flex-col gap-8">
+  {{with .Pod}}
+  <div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title">Control Panel</h2>
+      <div class="mt-2 mb-4 flex flex-col gap-4">
+        <div>
+          <label class="font-semibold tracking-wide">Name:</label>
+          <p class="text-lg">{{.Name}}</p>
+        </div>
+        <div>
+          <label class="font-semibold tracking-wide">Voting:</label>
+          <p class="text-lg">{{.Strategy}}</p>
+        </div>
+        <div class="form-control">
+            <label class="label cursor-pointer">
+                <span class="label-text font-semibold text-base">Private Voting:</span> 
+                <input disabled type="checkbox" class="toggle" {{if .Private}}checked{{end}}>
+            </label>
+        </div>
+      </div>
+      <div class="flex w-full">
+        <input disabled class="input input-sm grow" value="https://baleen.app/pod/{{.ID}}">
+        <button class="btn btn-sm btn-secondary">Copy URL</button>
+      </div>
+    </div>
+  </div>
+  {{end}}
+
+  {{if not .CurrentPlayer}}
+  <div class="w-full h-48 flex justify-center items-center">
+    <h3 class="animate-pulse text-2xl">Pick a Name to get Started</h3>
+  </div>
+  {{else}}
+  <div hx-ext="sse" sse-connect="/pod/{{.Pod.ID}}/events" sse-swap="players">
+    {{template "pod-info/players" .}}
+  </div>
+  {{end}}
+</div>
+{{end}}
+
+
+{{define "pod-info/players"}}
+<div class="flex flex-col col-start-2 overflow-x-auto">
+  {{range .Players}}
+  <div class="p-3 flex items-center gap-6">
+    <div class="avatar">
+      <div class="rounded-full w-12 h-12 ring ring-offset-base-200 ring-offset-1">
+        <img src="https://robohash.org/{{.ID}}" alt="Avatar Tailwind CSS Component" />
+      </div>
+    </div>
+    <div>
+      <div class="font-bold text-xl">{{.Name}}</div>
+      {{if .Owner}}
+      <div class="font-semibold opacity-50">(Owner)</div>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}
+
