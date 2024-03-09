@@ -1,0 +1,143 @@
+{{define "voting-content"}}
+<div id="voting-content" class="w-full flex flex-col gap-10 items-center justify-center">
+{{if not .CurrentPlayer}}
+  {{template "voting-content/register"   .}}
+{{else if eq .Pod.Status "voting"}}
+  {{if .CurrentChoice}}
+    {{template "voting-content/answered" .}}
+  {{else}}
+    {{template "voting-content/voting"   .}}
+  {{end}}
+{{else if .LastTopic}}
+  {{template "voting-content/results"    .}}
+{{else}}
+  {{template "voting-content/waiting"    .}}
+{{end}}
+</div>
+{{end}}
+
+
+{{define "voting-content/register"}}
+<form class="flex flex-col gap-4 w-full max-w-lg" hx-post="/pod/{{.Pod.ID}}/register">
+  <h2 class="text-2xl font-bold">Pick a Name to get Started</h2>
+  <label class="w-full input input-bordered flex items-center gap-2">
+    Name
+    <input name="name" type="text" class="grow" placeholder="Enter your name...">
+  </label>
+  <div class="flex justify-end">
+    <button class="btn btn-primary">
+      Join Pod
+    </button>
+  </div>
+</form>
+{{end}}
+
+
+{{define "voting-content/waiting"}}
+<div class="w-full flex flex-col py-20 h-72 gap-10 items-center justify-center">
+  <h2 class="animate-pulse text-2xl text-center font-bold">
+    Waiting for next topic to begin...
+  </h2>
+  {{if and .CurrentPlayer.Owner .NextTopic }}
+  <button class="btn btn-primary"
+          hx-post="/pod/{{.Pod.ID}}/start"
+          hx-target="closest div">
+    Start Next Topic
+  </button>
+  {{end}}
+</div>
+{{end}}
+
+
+{{define "voting-content/voting"}}
+<div class="flex w-full">
+  <span class="italic font-semibold tracking-wide">
+    {{.NextTopic.Prompt}}
+  </span>
+</div>
+<form class="w-max grid grid-cols-3 grid-row-2 gap-4 p-4" hx-target="#voting-content">
+  {{range $i, $v := .Pod.VotingChoices}}
+  <div class="card w-52 h-52 bg-base-100 shadow-xl cursor-pointer"
+          hx-post="/pod/{{$.Pod.ID}}/vote?c={{inc $i}}">
+    <div class="card-body">
+      <div class="aspect-square flex justify-center items-center">
+        <span class="text-5xl font-bold">
+          {{$v}}
+        </span>
+      </div>
+    </div>
+  </div>
+  {{end}}
+</form>
+{{end}}
+
+{{define "voting-content/answered"}}
+<div class="flex w-full">
+  <span class="italic font-semibold tracking-wide">
+    {{.NextTopic.Prompt}}
+  </span>
+</div>
+<form class="w-max grid grid-cols-3 grid-row-2 gap-4 p-4" hx-target="#voting-content">
+  {{range $i, $v := .Pod.VotingChoices}}
+  <div class="card w-52 h-52 bg-base-100 shadow-xl cursor-pointer {{if eq $.CurrentChoice (inc $i)}}bg-secondary text-secondary-content{{end}}"
+          hx-post="/pod/{{$.Pod.ID}}/vote?c={{inc $i}}">
+    <div class="card-body">
+      <div class="aspect-square flex justify-center items-center">
+        <span class="text-5xl font-bold">
+          {{$v}}
+        </span>
+      </div>
+    </div>
+  </div>
+  {{end}}
+</form>
+{{end}}
+
+
+{{define "voting-content/sharing"}}
+<h2 class="text-xl">
+    ...
+</h2>
+{{end}}
+
+
+{{define "voting-content/results"}}
+<div class="flex w-full">
+  <span class="italic font-semibold tracking-wide">
+    {{.LastTopic.Prompt}}
+  </span>
+</div>
+<div class="card w-52 h-64 bg-base-100 shadow-xl">
+  <div class="card-body">
+    <h2 class="card-title self-center text-2xl">Average</h2>
+    <div class="aspect-square flex justify-center items-center">
+      <span class="text-6xl font-bold">
+        {{.LastTopic.ResultString}}
+      </span>
+    </div>
+  </div>
+</div>
+<canvas id="success-canvas" class="pointer-events-none w-full h-full absolute inset-0"></canvas>
+{{if and .CurrentPlayer.Owner .NextTopic}}
+<button class="btn btn-primary"
+        hx-post="/pod/{{.Pod.ID}}/start"
+        hx-target="closest div">
+    Start Next Topic
+</button>
+{{end}}
+<script>
+;(() => {
+    const canvas = document.getElementById("success-canvas");
+    canvas.confetti = canvas.confetti || confetti.create(canvas, {
+        resize: true,
+    });
+    setTimeout(() => {
+        canvas.confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 1.2 }
+        });
+    }, 750);
+})();
+</script>
+{{end}}
