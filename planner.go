@@ -90,31 +90,24 @@ func streamPodEvents(w http.ResponseWriter, r *http.Request) {
 		player = db.CurrentPlayer(r, r.PathValue("id"))
 	}
 
-	events, done := make(chan db.Event), make(chan bool)
-	l, err := db.Subscribe(r.PathValue("id"), events, done)
+	// Subscribe to database events for pod
+	events, err := db.Subscribe(r.Context(), r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Failed to subscribe!", http.StatusInternalServerError)
 		return
 	}
 
-	for {
-		select {
-		case e := <-events:
-			props := getPlannerProps(r)
+	// Iterate over events and publish view to clients
+	for e := range events {
+		var (
+			buf   bytes.Buffer
+			props = getPlannerProps(r)
+		)
 
-			var buf bytes.Buffer
-			templates.Render(&buf, e.Tmpl, props)
-			data := strings.ReplaceAll(buf.String(), "\n", "")
-
-			fmt.Fprintf(w, "event: %s\ndata: %s\n\n", e.Name, data)
-			flusher.Flush()
-		case <-r.Context().Done():
-			// Unsubscribe(r.PathValue("id"), events)
-			db.Unsubscribe(l, r.PathValue("id"))
-			done <- true
-			close(events)
-			return
-		}
+		templates.Render(&buf, e.Tmpl, props)
+		data := strings.ReplaceAll(buf.String(), "\n", "")
+		fmt.Fprintf(w, "event: %s\ndata: %s\n\n", e.Name, data)
+		flusher.Flush()
 	}
 }
 

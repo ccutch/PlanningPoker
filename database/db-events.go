@@ -2,6 +2,7 @@ package database
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,7 +18,8 @@ type Event struct {
 	Tmpl string
 }
 
-func Subscribe(id string, out chan<- Event, done <-chan bool) (*pq.Listener, error) {
+func Subscribe(ctx context.Context, id string) (<-chan Event, error) {
+	events := make(chan Event)
 	dbURL, minT, maxT := os.Getenv("DATABASE_URL"), 10*time.Second, time.Minute
 	l := pq.NewListener(dbURL, minT, maxT, func(ev pq.ListenerEventType, err error) {
 		if err != nil {
@@ -30,20 +32,22 @@ func Subscribe(id string, out chan<- Event, done <-chan bool) (*pq.Listener, err
 	go func() {
 		for {
 			select {
+			case <-ctx.Done():
+				Unsubscribe(l, id)
+				close(events)
+				return
 			case n := <-l.Notify:
 				if n != nil {
 					var e Event
 					json.NewDecoder(strings.NewReader(n.Extra)).Decode(&e)
-					out <- e
+					events <- e
 				}
-			case <-done:
-				return
 			case <-time.After(90 * time.Second):
 				go l.Ping()
 			}
 		}
 	}()
-	return l, nil
+	return events, nil
 }
 
 func Publish(id, name, tmpl string) error {
