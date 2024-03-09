@@ -1,33 +1,30 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"planner"
-	"planner/database"
-)
-
-var (
-	port  = os.Getenv("PORT")
-	dbURL = os.Getenv("DATABASE_URL")
-
-	migrateDB = flag.Bool("migrate-db", false, "flag will use golang/migrate to migrate db schema")
 )
 
 func main() {
-	flag.Parse()
+	// Check for required environment variables
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("Missing Environment Variable: DATABASE_URL")
+	}
+
+	// Check that port is given or default to 8000
+	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8000"
 	}
-	if *migrateDB && dbURL != "" {
-		database.UpgradeDatabase()
-	}
-	http.Handle("/", planner.Routes)
-	log.Printf("Serving Baleen @ http://0.0.0.0:%s\n", port)
-	if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", port), nil); err != nil {
-		log.Fatal(err)
+
+	// Serve http and log server start time
+	addr := fmt.Sprintf("0.0.0.0:%s", port)
+	log.Printf("Serving Baleen.app @ http://%s\n", addr)
+	if err := http.ListenAndServe(addr, planner.Routes); err != nil {
+		log.Fatal("Failed to server http:", err)
 	}
 }

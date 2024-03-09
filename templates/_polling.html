@@ -61,7 +61,7 @@
           hx-post="/pod/{{$.Pod.ID}}/vote?c={{inc $i}}">
     <div class="card-body">
       <div class="aspect-square flex justify-center items-center">
-        <span class="text-5xl font-bold">
+          <span class="text-center {{if eq $.Pod.Strategy "Sentiment"}}text-2xl{{else}}text-5xl{{end}} font-bold">
           {{$v}}
         </span>
       </div>
@@ -83,7 +83,7 @@
           hx-post="/pod/{{$.Pod.ID}}/vote?c={{inc $i}}">
     <div class="card-body">
       <div class="aspect-square flex justify-center items-center">
-        <span class="text-5xl font-bold">
+        <span class="text-center {{if eq $.Pod.Strategy "Sentiment"}}text-3xl{{else}}text-5xl{{end}} font-bold">
           {{$v}}
         </span>
       </div>
@@ -111,7 +111,7 @@
   <div class="card-body">
     <h2 class="card-title self-center text-2xl">Average</h2>
     <div class="aspect-square flex justify-center items-center">
-      <span class="text-6xl font-bold">
+      <span class="text-center {{if eq $.Pod.Strategy "Sentiment"}}text-2xl{{else}}text-6xl{{end}} font-bold">
         {{.LastTopic.ResultString}}
       </span>
     </div>

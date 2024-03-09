@@ -2,25 +2,29 @@ package database
 
 import (
 	"embed"
-	"log"
+	e "errors"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/github"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/pkg/errors"
 )
 
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-func UpgradeDatabase() {
+func UpgradeDatabase() error {
 	fs, err := iofs.New(migrations, "migrations")
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "failed to find migrations")
 	}
 	m, err := migrate.NewWithSourceInstance("iofs", fs, dbURL)
 	if err != nil {
-		log.Fatal("failed ot parse", err)
+		return errors.Wrap(err, "failed to parse migrations")
 	}
-	m.Up()
+	if err := m.Up(); err != nil && !e.Is(err, migrate.ErrNoChange) {
+		return errors.Wrap(m.Up(), "Failed to upgrade database")
+	}
+	return nil
 }

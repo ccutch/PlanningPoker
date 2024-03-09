@@ -8,6 +8,7 @@ import (
 	db "planner/database"
 	"planner/templates"
 	"strings"
+	"time"
 )
 
 func init() {
@@ -71,10 +72,6 @@ func plannerPage(w http.ResponseWriter, r *http.Request) {
 
 // streamEvents stream Server Side Events to the client with html data
 func streamPodEvents(w http.ResponseWriter, r *http.Request) {
-	if player := db.CurrentPlayer(r, r.PathValue("id")); player == nil {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -85,12 +82,21 @@ func streamPodEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprint(w, "event: ping\ndata: \n\n")
 	flusher.Flush()
+
+	// Waiting for player to join
+	player := db.CurrentPlayer(r, r.PathValue("id"))
+	for player == nil {
+		time.Sleep(time.Second)
+		player = db.CurrentPlayer(r, r.PathValue("id"))
+	}
+
 	events, done := make(chan db.Event), make(chan bool)
 	l, err := db.Subscribe(r.PathValue("id"), events, done)
 	if err != nil {
 		http.Error(w, "Failed to subscribe!", http.StatusInternalServerError)
 		return
 	}
+
 	for {
 		select {
 		case e := <-events:
