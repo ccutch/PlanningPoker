@@ -1,15 +1,16 @@
 <html data-theme="fantasy">
   {{template "head" .}}
   <body class="bg-base-200 flex flex-col min-h-screen">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     {{template "navbar" .}}
-
     <div class="py-8 px-4 mx-auto container grid grid-cols-[2fr_1fr] items-start gap-y-8 gap-x-12">
-      <div hx-ext="sse" sse-connect="/pod/{{.Pod.ID}}/events" sse-swap="content">
-        {{template "voting-content" .}}
+      <div class="relative transition-all duration-1000 col-start-1 h-min rounded-box p-8 w-full bg-base-300">
+        <div hx-ext="sse" sse-connect="/pod/{{.Pod.ID}}/events" sse-swap="content">
+          {{template "voting-content" .}}
+        </div>
       </div>
       <div hx-ext="sse" sse-connect="/pod/{{.Pod.ID}}/events" sse-swap="topics">
         {{template "voting-topics" .}}
-        <!-- { {template "pod-topics/previous" .} } -->
       </div>
       {{template "pod-information" .}}
     </div>
@@ -45,7 +46,6 @@
     </div>
   </div>
   {{end}}
-
   {{if not .CurrentPlayer}}
   <div class="w-full h-48 flex justify-center items-center">
     <h3 class="animate-pulse text-2xl">Pick a Name to get Started</h3>

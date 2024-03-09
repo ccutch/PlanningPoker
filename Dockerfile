@@ -10,4 +10,4 @@ RUN go build -v -o /baleen.app ./cmd/baleen.app
 
 FROM alpine:latest
 COPY --from=builder /baleen.app /usr/local/bin/
-CMD ["baleen.app"]
+CMD ["baleen.app", "-migrate-db"]
